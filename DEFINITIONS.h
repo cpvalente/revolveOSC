@@ -22,6 +22,7 @@
 // Encoder
 #define encoder_cpr 2048 // change to your encoder resolution
 #define encoder_quad (encoder_cpr * 4) // quadrature counts is 4 * CPR
+#define encoder_angle_step 360.0 / encoder_quad
 
 // OSC
 #include <OSCMessage.h>

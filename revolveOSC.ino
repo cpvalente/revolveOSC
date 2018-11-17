@@ -1,6 +1,3 @@
-
-
-
 /*
  *  Revolve OSC
  *  -------------
@@ -14,7 +11,6 @@
 
 #include "DEFINITIONS.h"
 
-long angle;
 int32_t pos;
 
 static uint8_t state;   // variable for state control
@@ -26,14 +22,13 @@ EthernetUDP Udp;
 // network stuff
 byte MAC[] = { 0xA8, 0x61, 0x0A, 0xAE, 0x07, 0x74 };
 IPAddress IP(10, 0, 0, 11);
-IPAddress TARGET_IP(10, 0, 0, 255); // BROADCAST UNTESTED
+IPAddress TARGET_IP(10, 0, 0, 255); // Broadcast for now
 int PORT = 8888;
 
 void setup(){
 
   /* Initialize aux */
   state = GET;
-  angle = 0.0L;
 
   /* Initialize pins */
   // LEDS
@@ -64,21 +59,26 @@ void setup(){
 }
 
 void loop(){
+  state_machine();
+  //delay(DELAY_MS);
+}
+
+void state_machine(){
   switch (state) {
+
     case GET:
       read_data();
-      Serial.print(pos);
-      Serial.print("\t");
-      Serial.println(angle);
+      state++;
     break;
 
     case STREAM:
-      send_osc(angle);
-      send_socket(angle);
+      send_osc();
+      send_socket();
+      state = 0;
     break;
 
     case SETUP:
-      state = 1;
+      state = 0;
     break;
 
     default:
@@ -86,20 +86,21 @@ void loop(){
     state = GET;
     break;
   }
-
-  delay(DELAY_MS);
 }
 
 void read_data(){
   pos = REG_TC0_CV0;
   if (pos < 0) { pos += encoder_quad; }
-  angle = map(pos, encoder_quad, 0, 360.0, true);
+
 }
 
-void send_osc(long &val){
+void send_osc(){
+  // a bit dirty
+
+  float angle = encoder_angle_step * pos;
   OSCMessage msg("/rev/rot");
 
-  msg.add(val);
+  msg.add(angle).add(pos);
 
   Udp.beginPacket(TARGET_IP, PORT);
   msg.send(Udp); // send the bytes to the SLIP stream
@@ -108,7 +109,7 @@ void send_osc(long &val){
 
 }
 
-void send_socket(long &val){
+void send_socket(){
   // nothing yet, for websockets
 }
 
@@ -136,30 +137,4 @@ void reset_home(){
 
   interrupts();
 
-}
-
-
-
-
-
-
-float map(float value, float inputMin, float inputMax, float outputMin, float outputMax, bool clamp) {
-// nicked from ofx
-
-  if (fabs(inputMin - inputMax) < FLT_EPSILON){
-    return outputMin;
-  } else {
-    float outVal = ((value - inputMin) / (inputMax - inputMin) * (outputMax - outputMin) + outputMin);
-
-    if( clamp ){
-      if(outputMax < outputMin){
-        if( outVal < outputMax )outVal = outputMax;
-        else if( outVal > outputMin )outVal = outputMin;
-      }else{
-        if( outVal > outputMax )outVal = outputMax;
-        else if( outVal < outputMin )outVal = outputMin;
-      }
-    }
-    return outVal;
-  }
 }
