@@ -16,6 +16,7 @@
 
 long angle;
 int32_t pos;
+
 static uint8_t state;   // variable for state control
 enum states {GET, STREAM, SETUP};
 
@@ -37,6 +38,7 @@ void setup(){
   /* Initialize pins */
   // LEDS
   PIOC -> PIO_OER = (1 << LED1) | (1 << LED2) | (1 << LED3);
+  REG_PIOC_CODR |= (0x01 << 3); // Turn off the LED using the CODR register
 
   /* Initialize encoder stuff */
   // Setup Quadrature Encoder with index
@@ -50,6 +52,11 @@ void setup(){
   // enable the clock (CLKEN=1) and reset the counter (SWTRG=1)
   REG_TC0_CCR0 = 5;
 
+  // Enable qdec interrupts for index (setting the first bit high)
+  REG_TC0_QIER = TC_QIER_IDX;
+  // Enable interrupts on timer1
+  NVIC_EnableIRQ(TC0_IRQn);
+
   /* Initialize libraries */
   Ethernet.begin(MAC, IP);
   Udp.begin(PORT);
@@ -58,7 +65,6 @@ void setup(){
 
 void loop(){
   switch (state) {
-
     case GET:
       read_data();
       Serial.print(pos);
@@ -72,16 +78,16 @@ void loop(){
     break;
 
     case SETUP:
-
-    state = 1;
+      state = 1;
     break;
 
     default:
     // something went wrong and state machine is set to invalid state
     state = GET;
     break;
-
   }
+
+  delay(DELAY_MS);
 }
 
 void read_data(){
@@ -104,6 +110,16 @@ void send_osc(long &val){
 
 void send_socket(long &val){
   // nothing yet, for websockets
+}
+
+
+void TC0_Handler(){
+
+  noInterrupts();
+  if(REG_TC0_QISR & 0x01){
+    REG_PIOC_SODR |= (0x01 << LED1); // PIO_SODR set pin high
+  }
+  interrupts();
 }
 
 void reset_home(){
