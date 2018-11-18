@@ -157,7 +157,7 @@ void send_osc(){
   //float angle2 = encoder_angle_step * pos2;
 
   OSCMessage msg("/rev/rot");
-  msg.add(angle).add(pos).add(bGotZero);
+  msg.add(angle).add(pos).add((int)bGotZero);
   // simplify for now
   // msg.add(angle).add(angle2).add(pos).add(pos2).add(posOffset).add(bGotZero);
 
