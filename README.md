@@ -50,6 +50,7 @@ LINKS
 Due Pin Mapping - https://www.arduino.cc/en/Hacking/PinMappingSAM3X
 Due Pin Mapping Graphical - https://forum.arduino.cc/index.php?topic=132130.0
 Hardware Quadrature in Due - https://forum.arduino.cc/index.php?topic=140205.0
+EEPROM - http://www.hobbytronics.co.uk/arduino-external-eeprom
 
 License
 
