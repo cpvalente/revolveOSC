@@ -48,11 +48,11 @@ void setup(){
   bOSCEnabled = true;
   bSocketEnabled = false;
 
-  // buttons default HIGH
+  lastTimeDebounce = millis() + WARM_UP_TIME;
+
+  // buttons default high
   buttonState1 = buttonState2 = true;
   lastButtonState1 = lastButtonState2 = true;
-
-  lastTimeDebounce = millis() + WARM_UP_TIME;
 
   /* Initialize pins */
   // LEDS
@@ -85,10 +85,6 @@ void setup(){
   /* Initialize libraries */
   Ethernet.begin(MAC, IP);
   Udp.begin(PORT);
-  Wire.begin();  
-  Serial.begin(115200);
-  Serial.print("from eeprom: ");
-  Serial.println(posOffset);
 }
 
 void loop(){
@@ -158,10 +154,12 @@ void send_osc(){
   // a bit dirty
 
   float angle = encoder_angle_step * pos;
-  float angle2 = encoder_angle_step * pos2;
+  //float angle2 = encoder_angle_step * pos2;
 
   OSCMessage msg("/rev/rot");
-  msg.add(angle).add(angle2).add(pos).add(pos2).add(posOffset).add(bGotZero);
+  msg.add(angle).add(pos).add(bGotZero);
+  // simplify for now
+  // msg.add(angle).add(angle2).add(pos).add(pos2).add(posOffset).add(bGotZero);
 
   Udp.beginPacket(TARGET_IP, PORT);
   msg.send(Udp); // send the bytes to the SLIP stream
