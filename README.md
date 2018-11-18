@@ -27,6 +27,9 @@ There are 4 onboard LEDs
 - Blue 1 - NIU
 - Blue 2 - NIU
 
+TODO
+-------------
+- Read / Write custom 0 to EEPROM
 
 Hardware
 -------------

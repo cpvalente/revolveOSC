@@ -16,12 +16,13 @@ EthernetUDP Udp;
 
 /* aux */
 uint32_t nowTime, lastTime;
+bool bOSCEnabled, bSocketEnabled;
 
 // osc
-uint32_t lastBroadcast;
+uint32_t lastRefreshOSC;
 
-static uint8_t state;   // variable for state control
-enum states {GET, STREAM, SETUP};
+// websocket
+uint32_t lastRefreshSocket;
 
 /* periphericals */
 bool buttonState1, buttonState2;
@@ -41,9 +42,11 @@ int PORT = 8888;
 void setup(){
 
   /* Initialize aux */
-  state = GET;
   bGotZero = false;
   posOffset = 0;
+
+  bOSCEnabled = true;
+  bSocketEnabled = false;
 
   // buttons default HIGH
   buttonState1 = buttonState2 = true;
@@ -58,6 +61,11 @@ void setup(){
   // Buttons
   pinMode(BTN1, INPUT); digitalWrite(BTN1, HIGH);
   pinMode(BTN2, INPUT); digitalWrite(BTN2, HIGH);
+  // should be able to replace by port
+  // PIOC -> PIO_ODR = (1 << 13) | (1 << 15);
+  // read with
+  // PIOC->PIO_PDSR & (1 << 13);
+  // PIOC->PIO_PDSR & (1 << 15);
 
   /* Initialize encoder stuff */
   // Setup Quadrature Encoder with index
@@ -77,18 +85,21 @@ void setup(){
   /* Initialize libraries */
   Ethernet.begin(MAC, IP);
   Udp.begin(PORT);
+  Wire.begin();  
   Serial.begin(115200);
+  Serial.print("from eeprom: ");
+  Serial.println(posOffset);
 }
 
 void loop(){
 
   if (millis() - lastTimeDebounce >= DEBOUNCE_TIME){
+    // only check buttons after debounces
     check_buttons();
     lastTimeDebounce = millis();
+    return; // buttons stop things execute loop from happenning
   }
-
-  state_machine();
-  //delay(DELAY_MS);
+  execute_loop();
 }
 
 void check_buttons(){
@@ -115,28 +126,23 @@ void check_buttons(){
   //}
 
 }
-void state_machine(){
-  switch (state) {
+void execute_loop(){
+  
+  // always read data from encoder
+  read_data();
 
-    case GET:
-      read_data();
-      state++;
-      // always stream for now
-      // break;
-    case STREAM:
-      send_osc();
-      send_socket();
-      state = GET;
-    break;
+  unsigned long timeNow = millis();
 
-    case SETUP:
-      state = 0;
-    break;
-
-    default:
-    // something went wrong and state machine is set to invalid state
-    state = GET;
-    break;
+  // check OSC refresh time
+  if (timeNow - lastRefreshOSC >= OSC_MS && bOSCEnabled) {
+    send_osc();
+    lastRefreshOSC = timeNow;
+  }
+  
+  // check websocket refresh time
+  if  (timeNow - lastRefreshSocket >= SOCKET_MS && bSocketEnabled) {
+    send_socket();
+    lastRefreshSocket = timeNow;
   }
 }
 
@@ -192,6 +198,9 @@ void set_home(){
   } else {
     posOffset = 0 - pos;
   }
+
+  // write posOffset to EEPROM
+  
   interrupts();
 
 }

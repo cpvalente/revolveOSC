@@ -21,6 +21,10 @@
 #define BTN1 50 // 50 is C.13
 #define BTN2 48 // 48 is C.15
 
+// EEPROM
+#include <Wire.h>
+#define disk1 0x50 
+#define EEPROM_ADDRESS 0
 
 // Encoder
 #define encoder_cpr 2048 // change to your encoder resolution
@@ -29,10 +33,12 @@
 
 // OSC
 #include <OSCMessage.h>
+#define OSC_MS 16
 
 // WebSocket
 // #include <WebSocketsServer.h>
 // #include <Hash.h>
+#define SOCKET_MS 32
 
 
 #endif
